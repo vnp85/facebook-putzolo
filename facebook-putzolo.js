@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.08.16. 17:24
+// @version      2016.08.23. 16:10
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people
 // @author       VNP
 // @match        https://www.facebook.com/*
@@ -76,9 +76,12 @@
             if (lista[q].style.display!="none"){
                 var s = lista[q].innerHTML.toLowerCase();
                 if (
+                     (s.indexOf("sponsored") > -1) ||
                      (s.indexOf("suggested pages") > -1) ||
+                     (s.indexOf("sale groups") > -1) ||
                      (s.indexOf("suggested groups") > -1) ||
                      (s.indexOf("people you may know") > -1) ||
+                     (s.indexOf("improve your news feed") > -1) ||
                      (s.indexOf("suggested people") > -1)
                    ){
                     lista[q].style.display = "none";
