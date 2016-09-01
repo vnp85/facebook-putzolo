@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.08.28. 09:59
+// @version      2016.08.31. 19:07
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people
 // @author       VNP
 // @match        https://www.facebook.com/*
@@ -12,7 +12,10 @@
     'use strict';
     
     //some extra css
-    var css = '.carouselParent { display: none; } #GroupsRHCSuggestionSection { display: none; } #wekker { position: fixed; left: 0px; top: 0px; width: 10px; height: 10px;}';
+    var css = '.carouselParent { display: none; }'+
+              ' #GroupsRHCSuggestionSection { display: none; } '+
+              '#wekker { position: fixed; left: 0px; top: 0px; width: 10px; height: 10px;} '+
+              '#elements_hidden_by_putzolo { z-index: 9999; position: fixed; height: 16px; width: 60px; top: 3px; left: 100%; margin-left: -90px; text-align: right; cursor: not-allowed; font-size: 10pt; padding: 3px; }';
     var head = document.head || document.getElementsByTagName('head')[0];
     var style = document.createElement('style');    
     style.type = 'text/css';
@@ -23,9 +26,9 @@
     }
     head.appendChild(style);
     
-    //making the bar green, to show it's working
     var bb = document.getElementById("pagelet_bluebar");
     if (bb){
+       // this is the main facebook frame
        var lista = bb.getElementsByTagName("div");
        for (var q=0; q < lista.length; q++){
               var a = lista[q].getAttribute("role");
@@ -39,20 +42,29 @@
                  }                   
               };
        };           
+       // lets put in a counter
+       var counter = document.createElement("div");
+       counter.title = "Elements hidden by putzolo";
+       counter.id = "elements_hidden_by_putzolo"; 
+       counter.innerHTML = (localStorage.getItem("putzolo-counter") | "0");
+       document.body.appendChild(counter);
     };        
     
     /////setting up the interval that cleans the screen   
     setInterval(function (){
+        var hidden_in_this_round = 0; 
         var lista = document.getElementsByClassName("userContentWrapper");
         for (var q=0; q < lista.length; q++){
             if (lista[q].style.display!="none"){
               if (lista[q].innerHTML.indexOf("ponsored") > -1){
                   lista[q].style.display = "none";
+                  hidden_in_this_round++;
               }
             };
         }
         var lista = document.getElementsByTagName("div");
-        for (var q = 0; q < lista.length; q++){
+        for (var q = 0; q < lista.length; q++){ 
+          if (lista[q].style.display!="none"){
             var a = lista[q].getAttribute("data-ownerid");
             if (a){
                 a = String(a);
@@ -65,11 +77,13 @@
                       if (lista[q].innerHTML != ""){ 
                          // lista[q].style.border = "5px solid orange";
                          lista[q].style.display = "none";
+                         hidden_in_this_round++; 
                       };    
                    };
                 };
                 
             }
+          }  
         }
         
         //in the feed
@@ -80,6 +94,7 @@
                   var ls = lista[q].innerHTML.toLowerCase();
                   if (ls.indexOf("you may like") > -1){
                      lista[q].style.display = "none";
+                     hidden_in_this_round++; 
                   };
                }
             }  
@@ -101,8 +116,16 @@
                      (s.indexOf("suggested people") > -1)
                    ){
                     lista[q].style.display = "none";
+                    hidden_in_this_round++;
                 }
             };
+        }
+        
+        if (hidden_in_this_round > 0){
+            if (counter){
+              counter.innerHTML = parseInt(counter.innerHTML) + hidden_in_this_round;
+              localStorage.setItem("putzolo-counter", counter.innerHTML);
+            }                
         }
     }, 1000);
 })();
