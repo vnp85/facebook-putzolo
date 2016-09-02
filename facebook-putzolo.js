@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.08.31. 19:07
+// @version      2016.09.01. 21:58
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people
 // @author       VNP
 // @match        https://www.facebook.com/*
@@ -10,12 +10,16 @@
 
 (function() {
     'use strict';
+    //prevent the page from deleting my interval
+    window.putzoloInterval = -1;
+    window.clearInterval2 = window.clearInterval;
     
     //some extra css
-    var css = '.carouselParent { display: none; }'+
+    var css = ' .carouselParent { display: none; }'+
               ' #GroupsRHCSuggestionSection { display: none; } '+
-              '#wekker { position: fixed; left: 0px; top: 0px; width: 10px; height: 10px;} '+
-              '#elements_hidden_by_putzolo { z-index: 9999; position: fixed; height: 16px; width: 60px; top: 3px; left: 100%; margin-left: -90px; text-align: right; cursor: not-allowed; font-size: 10pt; padding: 3px; }';
+              ' #wekker { position: fixed; left: 0px; top: 0px; width: 10px; height: 10px;} '+
+              ' #elements_hidden_by_putzolo { z-index: 9999; position: fixed; height: 16px; width: 60px; top: 3px; left: 100%; margin-left: -90px; text-align: right; cursor: not-allowed; font-size: 10pt; padding: 3px; }'+
+              ' #putzolo_ticker { z-index: 9999; position: fixed; left: 0px; top: 0px; height: 6px; width: 6px; overflow: hidden; background-color: yellow}';
     var head = document.head || document.getElementsByTagName('head')[0];
     var style = document.createElement('style');    
     style.type = 'text/css';
@@ -48,10 +52,22 @@
        counter.id = "elements_hidden_by_putzolo"; 
        counter.innerHTML = (localStorage.getItem("putzolo-counter") | "0");
        document.body.appendChild(counter);
+       
+       var ticker = document.createElement("div");
+       ticker.id = "putzolo_ticker";
+       ticker.innerHTML = "&nbsp;"; 
+       document.body.appendChild(ticker);
     };        
     
     /////setting up the interval that cleans the screen   
-    setInterval(function (){
+    window.putzoloInterval = setInterval(function (){
+        // preventing the page from restoring the original function
+        window.clearInterval = function(intervalId) {
+           if (intervalId != window.putzoloInterval){
+               window.clearInterval2(intervalId); 
+           }
+        };
+
         var hidden_in_this_round = 0; 
         var lista = document.getElementsByClassName("userContentWrapper");
         for (var q=0; q < lista.length; q++){
@@ -127,5 +143,13 @@
               localStorage.setItem("putzolo-counter", counter.innerHTML);
             }                
         }
+        if (ticker){
+            if (ticker.style.backgroundColor == "white"){
+                ticker.style.backgroundColor = "black";
+            }else{
+                ticker.style.backgroundColor = "white";
+            }
+        }
     }, 1000);
+
 })();
