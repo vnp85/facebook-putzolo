@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.09.01. 21:58
+// @version      2016.09.05. 22:57
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people
 // @author       VNP
 // @match        https://www.facebook.com/*
@@ -11,8 +11,27 @@
 (function() {
     'use strict';
     //prevent the page from deleting my interval
+    function putzolo_is_this_suggested(s){
+         if (
+                     (s.indexOf("invite friends to like") > -1) ||
+                     (s.indexOf("sponsored") > -1) ||
+                     (s.indexOf("suggested pages") > -1) ||
+                     (s.indexOf("sale groups") > -1) ||
+                     (s.indexOf("suggested groups") > -1) ||
+                     (s.indexOf("page posts you") > -1) ||
+                     (s.indexOf("you may like") > -1) ||
+                     (s.indexOf("people you may know") > -1) ||
+                     (s.indexOf("improve your news feed") > -1) ||
+                     (s.indexOf("suggested people") > -1)
+        ){ 
+             return true;
+        };        
+        return false;
+    }
+    
     window.putzoloInterval = -1;
-    window.clearInterval2 = window.clearInterval;
+    window.kliorInterval = window.clearInterval;
+    window.kliorTimeout = window.clearTimeout;
     
     //some extra css
     var css = ' .carouselParent { display: none; }'+
@@ -48,9 +67,16 @@
        };           
        // lets put in a counter
        var counter = document.createElement("div");
-       counter.title = "Elements hidden by putzolo";
+       counter.title = "Elements hidden by putzolo, fb seems to be clearing the localstorage from time to time";
        counter.id = "elements_hidden_by_putzolo"; 
-       counter.innerHTML = (localStorage.getItem("putzolo-counter") | "0");
+       var pc = localStorage.getItem("putzolo-counter");
+       if (!pc){
+           pc = "0";
+       } 
+       if (pc==""){
+           pc = "0";
+       }
+       counter.innerHTML = pc;
        document.body.appendChild(counter);
        
        var ticker = document.createElement("div");
@@ -64,7 +90,12 @@
         // preventing the page from restoring the original function
         window.clearInterval = function(intervalId) {
            if (intervalId != window.putzoloInterval){
-               window.clearInterval2(intervalId); 
+               window.kliorInterval(intervalId); 
+           }
+        };
+        window.clearTimeout = function(intervalId) {
+           if (intervalId != window.putzoloInterval){
+               window.kliorTimeout(intervalId); 
            }
         };
 
@@ -107,8 +138,8 @@
         for (var q =0; q<lista.length; q++){
             if (parseInt(lista[q].getAttribute("data-fte")) == 1){
                if (lista[q].style.display!="none"){
-                  var ls = lista[q].innerHTML.toLowerCase();
-                  if (ls.indexOf("you may like") > -1){
+                  var s = lista[q].innerHTML.toLowerCase();
+                  if ( putzolo_is_this_suggested(s) ){
                      lista[q].style.display = "none";
                      hidden_in_this_round++; 
                   };
@@ -121,16 +152,7 @@
         for (var q=0; q < lista.length; q++){
             if (lista[q].style.display!="none"){
                 var s = lista[q].innerHTML.toLowerCase();
-                if (
-                     (s.indexOf("invite friends to like") > -1) ||
-                     (s.indexOf("sponsored") > -1) ||
-                     (s.indexOf("suggested pages") > -1) ||
-                     (s.indexOf("sale groups") > -1) ||
-                     (s.indexOf("suggested groups") > -1) ||
-                     (s.indexOf("people you may know") > -1) ||
-                     (s.indexOf("improve your news feed") > -1) ||
-                     (s.indexOf("suggested people") > -1)
-                   ){
+                if ( putzolo_is_this_suggested(s) ){
                     lista[q].style.display = "none";
                     hidden_in_this_round++;
                 }
@@ -139,8 +161,8 @@
         
         if (hidden_in_this_round > 0){
             if (counter){
-              counter.innerHTML = parseInt(counter.innerHTML) + hidden_in_this_round;
-              localStorage.setItem("putzolo-counter", counter.innerHTML);
+                counter.innerHTML = parseInt(counter.innerHTML) + hidden_in_this_round;
+                localStorage.setItem("putzolo-counter", counter.innerHTML);                
             }                
         }
         if (ticker){
@@ -151,5 +173,5 @@
             }
         }
     }, 1000);
-
+    
 })();
