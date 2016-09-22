@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.09.05. 22:57
+// @version      2016.09.21. 22:57
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people
 // @author       VNP
 // @match        https://www.facebook.com/*
@@ -20,6 +20,7 @@
                      (s.indexOf("suggested groups") > -1) ||
                      (s.indexOf("page posts you") > -1) ||
                      (s.indexOf("you may like") > -1) ||
+                     (s.indexOf("by writing a review") > -1) ||
                      (s.indexOf("people you may know") > -1) ||
                      (s.indexOf("improve your news feed") > -1) ||
                      (s.indexOf("suggested people") > -1)
