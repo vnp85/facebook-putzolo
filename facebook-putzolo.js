@@ -11,7 +11,7 @@
 (function() {
     'use strict';
     //prevent the page from deleting my interval
-    function putzolo_is_this_suggested(s){
+    function putzolo_is_this_to_be_hidden(s){
          if (
                      (s.indexOf("invite friends to like") > -1) ||
                      (s.indexOf("sponsored") > -1) ||
@@ -140,7 +140,7 @@
             if (parseInt(lista[q].getAttribute("data-fte")) == 1){
                if (lista[q].style.display!="none"){
                   var s = lista[q].innerHTML.toLowerCase();
-                  if ( putzolo_is_this_suggested(s) ){
+                  if ( putzolo_is_this_to_be_hidden(s) ){
                      lista[q].style.display = "none";
                      hidden_in_this_round++; 
                   };
@@ -153,7 +153,7 @@
         for (var q=0; q < lista.length; q++){
             if (lista[q].style.display!="none"){
                 var s = lista[q].innerHTML.toLowerCase();
-                if ( putzolo_is_this_suggested(s) ){
+                if ( putzolo_is_this_to_be_hidden(s) ){
                     lista[q].style.display = "none";
                     hidden_in_this_round++;
                 }
