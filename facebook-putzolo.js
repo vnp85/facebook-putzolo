@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.09.21. 22:57
+// @version      2016.11.11. 08:10
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people
 // @author       VNP
 // @match        https://www.facebook.com/*
@@ -10,12 +10,47 @@
 
 (function() {
     'use strict';
-    //prevent the page from deleting my interval
+    function putzolo_string_fits_keywords(s){
+        var hide = new Array("karácsony", "húsvét", 'christmas', 'ünnepek', "happy new year");
+        var but_keep = new Array("karácsonyi zsolt", "karácsony ben");
+        s = s.toLowerCase();
+        for (var q=0; q<hide.length; q++){
+            if (s.indexOf(hide[q]) > -1){
+                var b = true;
+                for (var i = 0; i<but_keep.length; i++){
+                     if (s.indexOf(but_keep[q]) > -1){
+                         b = false;
+                     }
+                }
+                if (b){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    function putzolo_post_fits_keywords(d){
+        var at = "data-kwchk";
+        var a = d.getAttribute(at);
+        if (a){
+            return (a=="3");
+        }else{
+            var s = d.innerHTML.split("<"+"form")[0];
+            if (putzolo_string_fits_keywords(s)){
+                d.setAttribute(at, "3");
+                return true;
+            }else{
+                d.setAttribute(at, "2");
+                return false;
+            }
+        }
+    }
     function putzolo_is_this_to_be_hidden(s){
          if (
                      (s.indexOf("invite friends to like") > -1) ||
                      (s.indexOf("sponsored") > -1) ||
                      (s.indexOf("suggested pages") > -1) ||
+                     (s.indexOf("buy and sell groups") > -1) ||
                      (s.indexOf("sale groups") > -1) ||
                      (s.indexOf("suggested groups") > -1) ||
                      (s.indexOf("page posts you") > -1) ||
@@ -107,8 +142,13 @@
               if (lista[q].innerHTML.indexOf("ponsored") > -1){
                   lista[q].style.display = "none";
                   hidden_in_this_round++;
-              }
+              }                
             };
+            if (lista[q].style.display!="none"){
+                if (putzolo_post_fits_keywords(lista[q])){
+                    lista[q].style.opacity = 0.3;
+                }
+            };            
         }
         var lista = document.getElementsByTagName("div");
         for (var q = 0; q < lista.length; q++){ 
@@ -158,6 +198,20 @@
                     hidden_in_this_round++;
                 }
             };
+        }                
+        
+        //install some bloated app
+        var lista = document.getElementsByTagName("a");
+        for (var q=0; q < lista.length; q++){
+            if (lista[q].style.display!="none"){
+                if (lista[q].href){
+                    if (lista[q].href.indexOf("install_link") > 0){
+                        lista[q].style.display = "none";
+                        lista[q].parentNode.style.display = "none";
+                        hidden_in_this_round++;
+                    }
+                }
+            }
         }
         
         if (hidden_in_this_round > 0){
