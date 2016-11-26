@@ -1,17 +1,18 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.11.11. 08:10
+// @version      2016.11.26. 19:10
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people
 // @author       VNP
 // @match        https://www.facebook.com/*
+// @run-at       document-start
 // @grant        none
 // ==/UserScript==
 
 (function() {
     'use strict';
     function putzolo_string_fits_keywords(s){
-        var hide = new Array("karácsony", "húsvét", 'christmas', 'ünnepek', "happy new year");
+        var hide = new Array("karácsony", "húsvét", 'christmas', 'ünnepek', "happy new year", "isten éltessen", "isten eltessen", "boldog szuletesnapot", "boldog születésnapot", "boldog szulinapot", "boldog szülinapot");
         var but_keep = new Array("karácsonyi zsolt", "karácsony ben");
         s = s.toLowerCase();
         for (var q=0; q<hide.length; q++){
@@ -28,6 +29,34 @@
             }
         }
         return false;
+    }
+    function eventFire(el, etype){
+      if (el.fireEvent) {
+        el.fireEvent('on' + etype);
+      } else {
+        var evObj = document.createEvent('Events');
+        evObj.initEvent(etype, true, false);
+        el.dispatchEvent(evObj);
+      }
+    }
+    function putzolo_onepostandmoreclick(){
+        var contCol = document.getElementById("contentCol");
+        if (!contCol){
+            contCol = document.getElementById("contentArea");
+        }
+        if (!contCol){
+            return ;
+        }
+        if (contCol.clientHeight < 1200){
+            var lista = document.getElementsByTagName("a");
+            for (var q=0; q<lista.length; q++){
+                 if (lista[q].getAttribute("role") == "button"){
+                   if (lista[q].innerHTML.toLowerCase().indexOf("more stories") > -1){
+                       eventFire(lista[q], "click");
+                   }
+                 };
+            }
+        } 
     }
     function putzolo_post_fits_keywords(d){
         var at = "data-kwchk";
@@ -68,61 +97,8 @@
     window.putzoloInterval = -1;
     window.kliorInterval = window.clearInterval;
     window.kliorTimeout = window.clearTimeout;
-    
-    //some extra css
-    var css = ' .carouselParent { display: none; }'+
-              ' #GroupsRHCSuggestionSection { display: none; } '+
-              ' #wekker { position: fixed; left: 0px; top: 0px; width: 10px; height: 10px;} '+
-              ' #elements_hidden_by_putzolo { z-index: 9999; position: fixed; height: 16px; width: 60px; top: 3px; left: 100%; margin-left: -90px; text-align: right; cursor: not-allowed; font-size: 10pt; padding: 3px; }'+
-              ' #putzolo_ticker { z-index: 9999; position: fixed; left: 0px; top: 0px; height: 6px; width: 6px; overflow: hidden; background-color: yellow}';
-    var head = document.head || document.getElementsByTagName('head')[0];
-    var style = document.createElement('style');    
-    style.type = 'text/css';
-    if (style.styleSheet){
-       style.styleSheet.cssText = css;
-    } else {
-       style.appendChild(document.createTextNode(css));
-    }
-    head.appendChild(style);
-    
-    var bb = document.getElementById("pagelet_bluebar");
-    if (bb){
-       // this is the main facebook frame
-       var lista = bb.getElementsByTagName("div");
-       for (var q=0; q < lista.length; q++){
-              var a = lista[q].getAttribute("role");
-              if (a!="dialog"){
-                 if (
-                       (lista[q].parentNode == bb) || 
-                       (lista[q].parentNode.parentNode == bb) || 
-                       (lista[q].parentNode.parentNode.parentNode == bb)
-                    ){
-                        lista[q].style.backgroundColor = "green";
-                 }                   
-              };
-       };           
-       // lets put in a counter
-       var counter = document.createElement("div");
-       counter.title = "Elements hidden by putzolo, fb seems to be clearing the localstorage from time to time";
-       counter.id = "elements_hidden_by_putzolo"; 
-       var pc = localStorage.getItem("putzolo-counter");
-       if (!pc){
-           pc = "0";
-       } 
-       if (pc==""){
-           pc = "0";
-       }
-       counter.innerHTML = pc;
-       document.body.appendChild(counter);
-       
-       var ticker = document.createElement("div");
-       ticker.id = "putzolo_ticker";
-       ticker.innerHTML = "&nbsp;"; 
-       document.body.appendChild(ticker);
-    };        
-    
-    /////setting up the interval that cleans the screen   
-    window.putzoloInterval = setInterval(function (){
+
+    window.setInterval(function (){
         // preventing the page from restoring the original function
         window.clearInterval = function(intervalId) {
            if (intervalId != window.putzoloInterval){
@@ -134,7 +110,78 @@
                window.kliorTimeout(intervalId); 
            }
         };
+    }, 10);
+    
+    console.log("putzolo inited, intervalhandlers grabbed");
+    
+    function putzolo_putUIElements(){        
+        var head = document.head || document.getElementsByTagName('head')[0];
+        var bb = document.getElementById("pagelet_bluebar");
+        if (!bb){
+            //facebook has not loaded yet
+            setTimeout(function (){
+                putzolo_putUIElements();
+            }, 100);
+            return ;
+        }
+        //some extra css
+        var css = ' .carouselParent { display: none; }'+
+            ' #GroupsRHCSuggestionSection { display: none; } '+
+            ' #wekker { position: fixed; left: 0px; top: 0px; width: 10px; height: 10px;} '+
+            ' #elements_hidden_by_putzolo { z-index: 9999; position: fixed; height: 16px; width: 60px; top: 3px; left: 100%; margin-left: -90px; text-align: right; cursor: not-allowed; font-size: 10pt; padding: 3px; }'+
+            ' #putzolo_ticker { z-index: 9999; position: fixed; left: 0px; top: 0px; height: 6px; width: 6px; overflow: hidden; background-color: yellow}';
+        var style = document.createElement('style');    
+        style.type = 'text/css';
+        if (style.styleSheet){
+            style.styleSheet.cssText = css;
+        } else {
+            style.appendChild(document.createTextNode(css));
+        }
+        head.appendChild(style);
 
+        if (bb){
+            // this is the main facebook frame
+            var lista = bb.getElementsByTagName("div");
+            for (var q=0; q < lista.length; q++){
+                var a = lista[q].getAttribute("role");
+                if (a!="dialog"){
+                    if (
+                        (lista[q].parentNode == bb) || 
+                        (lista[q].parentNode.parentNode == bb) || 
+                        (lista[q].parentNode.parentNode.parentNode == bb)
+                    ){
+                        lista[q].style.backgroundColor = "green";
+                    }                   
+                };
+            };           
+            // lets put in a counter
+            var counter = document.createElement("div");
+            counter.title = "Elements hidden by putzolo, fb seems to be clearing the localstorage from time to time";
+            counter.id = "elements_hidden_by_putzolo"; 
+            var pc = localStorage.getItem("putzolo-counter");
+            if (!pc){
+                pc = "0";
+            } 
+            if (pc==""){
+                pc = "0";
+            }
+            counter.innerHTML = pc;            
+            document.body.appendChild(counter);
+
+            var ticker = document.createElement("div");
+            ticker.id = "putzolo_ticker";
+            ticker.innerHTML = "&nbsp;"; 
+            document.body.appendChild(ticker);
+            
+            window.putzolo_counter = counter;
+            window.putzolo_ticker  = ticker;
+        };        
+    };
+    
+    putzolo_putUIElements();
+    
+    //setting up the interval that cleans the screen   
+    window.putzoloInterval = setInterval(function (){
         var hidden_in_this_round = 0; 
         var lista = document.getElementsByClassName("userContentWrapper");
         for (var q=0; q < lista.length; q++){
@@ -215,18 +262,19 @@
         }
         
         if (hidden_in_this_round > 0){
-            if (counter){
-                counter.innerHTML = parseInt(counter.innerHTML) + hidden_in_this_round;
-                localStorage.setItem("putzolo-counter", counter.innerHTML);                
+            if (window.putzolo_counter){
+                window.putzolo_counter.innerHTML = parseInt(window.putzolo_counter.innerHTML) + hidden_in_this_round;
+                localStorage.setItem("putzolo-counter", window.putzolo_counter.innerHTML);                
             }                
         }
-        if (ticker){
-            if (ticker.style.backgroundColor == "white"){
-                ticker.style.backgroundColor = "black";
+        if (window.putzolo_ticker){
+            if (window.putzolo_ticker.style.backgroundColor == "white"){
+                window.putzolo_ticker.style.backgroundColor = "black";
             }else{
-                ticker.style.backgroundColor = "white";
+                window.putzolo_ticker.style.backgroundColor = "white";
             }
         }
+        putzolo_onepostandmoreclick();
     }, 1000);
     
 })();
