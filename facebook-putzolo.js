@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.11.26. 19:10
+// @version      2016.11.29. 08:31
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people
 // @author       VNP
 // @match        https://www.facebook.com/*
@@ -11,9 +11,55 @@
 
 (function() {
     'use strict';
-    function putzolo_string_fits_keywords(s){
-        var hide = new Array("karácsony", "húsvét", 'christmas', 'ünnepek', "happy new year", "isten éltessen", "isten eltessen", "boldog szuletesnapot", "boldog születésnapot", "boldog szulinapot", "boldog szülinapot");
-        var but_keep = new Array("karácsonyi zsolt", "karácsony ben");
+
+    function putzolo_eventFire(el, etype){
+      if (el.fireEvent) {
+        el.fireEvent('on' + etype);
+      } else {
+        var evObj = document.createEvent('Events');
+        evObj.initEvent(etype, true, false);
+        el.dispatchEvent(evObj);
+      }
+    }
+    function putzolo_fewPostVisibleSoClickMoreButton(){
+        var contCol = document.getElementById("contentCol");
+        if (!contCol){
+            contCol = document.getElementById("contentArea");
+        }
+        if (!contCol){
+            return ;
+        }
+        if (contCol.clientHeight < 1200){
+            var lista = document.getElementsByTagName("a");
+            for (var q=0; q<lista.length; q++){
+                 if (lista[q].getAttribute("role") == "button"){
+                   if (lista[q].innerHTML.toLowerCase().indexOf("more stories") > -1){
+                       putzolo_eventFire(lista[q], "click");
+                   }
+                 };
+            }
+        } 
+    }
+    function putzolo_stringFitsCheesyKeywords(s){
+        var hide = new Array(
+            "kar"+String.fromCharCode(225)+"csony", 
+            "h"+String.fromCharCode(250)+
+            "sv"+String.fromCharCode(233)+"t", 
+            'christmas', 
+            '"+String.fromCharCode(252)+"nnepek', 
+            "happy new year", 
+            "isten "+String.fromCharCode(233)+"ltessen", 
+            "isten eltessen", 
+            "boldog szuletesnapot", 
+            "boldog sz"+String.fromCharCode(252)+"let"+String.fromCharCode(233)+"snapot", 
+            "boldog szulinapot", 
+            "boldog sz"+String.fromCharCode(252)+"linapot"
+        );
+        var but_keep = new Array(
+            "kar"+String.fromCharCode(225)+"csonyi zsolt", 
+            "kar"+String.fromCharCode(225)+"csony ben"
+        );
+        
         s = s.toLowerCase();
         for (var q=0; q<hide.length; q++){
             if (s.indexOf(hide[q]) > -1){
@@ -29,43 +75,15 @@
             }
         }
         return false;
-    }
-    function eventFire(el, etype){
-      if (el.fireEvent) {
-        el.fireEvent('on' + etype);
-      } else {
-        var evObj = document.createEvent('Events');
-        evObj.initEvent(etype, true, false);
-        el.dispatchEvent(evObj);
-      }
-    }
-    function putzolo_onepostandmoreclick(){
-        var contCol = document.getElementById("contentCol");
-        if (!contCol){
-            contCol = document.getElementById("contentArea");
-        }
-        if (!contCol){
-            return ;
-        }
-        if (contCol.clientHeight < 1200){
-            var lista = document.getElementsByTagName("a");
-            for (var q=0; q<lista.length; q++){
-                 if (lista[q].getAttribute("role") == "button"){
-                   if (lista[q].innerHTML.toLowerCase().indexOf("more stories") > -1){
-                       eventFire(lista[q], "click");
-                   }
-                 };
-            }
-        } 
-    }
-    function putzolo_post_fits_keywords(d){
+    }    
+    function putzolo_postFitsCheesyKeywords(d){
         var at = "data-kwchk";
         var a = d.getAttribute(at);
         if (a){
             return (a=="3");
         }else{
             var s = d.innerHTML.split("<"+"form")[0];
-            if (putzolo_string_fits_keywords(s)){
+            if (putzolo_stringFitsCheesyKeywords(s)){
                 d.setAttribute(at, "3");
                 return true;
             }else{
@@ -74,7 +92,7 @@
             }
         }
     }
-    function putzolo_is_this_to_be_hidden(s){
+    function putzolo_isToBeHiddenJudgingByText(s){
          if (
                      (s.indexOf("invite friends to like") > -1) ||
                      (s.indexOf("sponsored") > -1) ||
@@ -94,6 +112,7 @@
         return false;
     }
     
+    // taking over the timeouts and intervals
     window.putzoloInterval = -1;
     window.kliorInterval = window.clearInterval;
     window.kliorTimeout = window.clearTimeout;
@@ -118,7 +137,7 @@
         var head = document.head || document.getElementsByTagName('head')[0];
         var bb = document.getElementById("pagelet_bluebar");
         if (!bb){
-            //facebook has not loaded yet
+            //facebook has not loaded yet, wait
             setTimeout(function (){
                 putzolo_putUIElements();
             }, 100);
@@ -192,7 +211,7 @@
               }                
             };
             if (lista[q].style.display!="none"){
-                if (putzolo_post_fits_keywords(lista[q])){
+                if (putzolo_postFitsCheesyKeywords(lista[q])){
                     lista[q].style.opacity = 0.3;
                 }
             };            
@@ -227,7 +246,7 @@
             if (parseInt(lista[q].getAttribute("data-fte")) == 1){
                if (lista[q].style.display!="none"){
                   var s = lista[q].innerHTML.toLowerCase();
-                  if ( putzolo_is_this_to_be_hidden(s) ){
+                  if ( putzolo_isToBeHiddenJudgingByText(s) ){
                      lista[q].style.display = "none";
                      hidden_in_this_round++; 
                   };
@@ -240,7 +259,7 @@
         for (var q=0; q < lista.length; q++){
             if (lista[q].style.display!="none"){
                 var s = lista[q].innerHTML.toLowerCase();
-                if ( putzolo_is_this_to_be_hidden(s) ){
+                if ( putzolo_isToBeHiddenJudgingByText(s) ){
                     lista[q].style.display = "none";
                     hidden_in_this_round++;
                 }
@@ -274,7 +293,7 @@
                 window.putzolo_ticker.style.backgroundColor = "white";
             }
         }
-        putzolo_onepostandmoreclick();
+        putzolo_fewPostVisibleSoClickMoreButton();
     }, 1000);
     
 })();
