@@ -4,7 +4,7 @@
 // @version      2016.12.14. 10:55
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people, needs fb to be in english
 // @author       VNP
-// @match        https://www.facebook.com/*
+// @match        https://*.facebook.com/*
 // @run-at       document-start
 // @grant        none
 // ==/UserScript==
@@ -24,25 +24,30 @@
     window.putzoloInterval = -1;
     window.kliorInterval = window.clearInterval;
     window.kliorTimeout = window.clearTimeout;
-
-    window.setInterval(function (){
+    
+    function grabIntervals(){
         // preventing the page from restoring the original function
-        window.clearInterval = function(intervalId) {
-           if (intervalId != window.putzoloInterval){
-               window.kliorInterval(intervalId); 
+        var k = function(intervalId) {
+           if (intervalId){ 
+               if (intervalId != window.putzoloInterval){
+                   window.kliorInterval(intervalId); 
+               }else{
+                   console.log("clear interval attempt for putzolo: ", intervalId);
+               }
            }
+           return undefined; 
         };
-        window.clearInterval.toString = function (){
-            return "function clearInterval() { [native code] }"
-        }
-        window.clearTimeout = function(intervalId) {
-           if (intervalId != window.putzoloInterval){
-               window.kliorTimeout(intervalId); 
-           }
-        };
-        window.clearTimeout.toString = function (){
+        k.toString = function (){
             return "function clearTimeout() { [native code] }"
         }
+        window.clearInterval = k;
+        window.clearTimeout = k;
+    }
+    
+    grabIntervals();
+
+    window.setInterval(function (){
+        grabIntervals();
     }, 10);
     console.log("putzolo inited, intervalhandlers grabbed");
 
@@ -175,7 +180,7 @@
         })
         pairs.push({
              killIf:    ["christmas"],
-             butKeepIf: ["last christmas"]
+             butKeepIf: ["last christmas", "apod", "cluster"]
         })
         pairs.push({
            killIf: [
@@ -235,6 +240,69 @@
         }
     }
     
+    
+    /*
+    
+    chat list
+    
+    */
+    
+    function putzolo_moveElementToTheEndOfTheList(e){
+        var li = e;
+        for (var q=0; q<10; q++){
+            if (li.tagName.toLowerCase() != "li"){
+                li = li.parentNode;
+            }            
+        };
+        if (li.tagName.toLowerCase() == "li"){
+            var ul = li.parentNode;
+            var go = true;
+            var k = ul.lastChild;
+            for (var g=0; g<5; g++){
+                if (li == k){
+                    go = false;
+                }
+                k = k.previousElementSibling;
+            }
+            if (go){
+               ul.removeChild(li);
+               ul.appendChild(li);
+            }                
+        }else{
+            e.parentNode.parentNode.opacity = "0.2";
+        }
+        
+    }
+    function putzolo_rearrangeTheChatList(){
+        var parento = document.getElementsByClassName("fbChatSidebarBody");
+        if (parento[0]){
+            parento = parento[0];
+        }else{
+            parento = document;
+        }
+        var li_k = parento.getElementsByTagName("li");
+        for (var i=0; i<li_k.length; i++){
+            if (li_k[i].className.indexOf("_42fz") > -1){
+                if (!li_k[i].getAttribute("data-id")){
+                    li_k[i].style.display = "none";
+                }
+            }
+            var lista = li_k[i].getElementsByTagName("div");
+            for (var q=0; q<lista.length; q++){
+                var s = lista[q].innerHTML;
+                if (s.length < 25){
+                    if (s.indexOf("______________") == 0){
+                        putzolo_moveElementToTheEndOfTheList(lista[q]);
+                    }
+                    if (s.indexOf("_______________") > -1){
+                        putzolo_moveElementToTheEndOfTheList(lista[q]);
+                    }
+                }
+            }
+        }
+
+    }
+    
     /*
     
     PUTZOLO
@@ -251,6 +319,8 @@
                      (s.indexOf("buy and sell groups") > -1) ||
                      (s.indexOf("sale groups") > -1) ||
                      (s.indexOf("suggested groups") > -1) ||
+                     (s.indexOf("popular live vid") > -1) ||
+                     (s.indexOf("popular vid") > -1) ||
                      (s.indexOf("page posts you") > -1) ||
                      (s.indexOf("you may like") > -1) ||
                      (s.indexOf("by writing a review") > -1) ||
@@ -264,6 +334,8 @@
     }
     //setting up the interval that cleans the screen   
     window.putzoloInterval = setInterval(function (){
+        putzolo_rearrangeTheChatList();
+                
         var hidden_in_this_round = 0; 
         var lista = document.getElementsByClassName("userContentWrapper");
         for (var q=0; q < lista.length; q++){
@@ -276,6 +348,12 @@
             if (lista[q].style.display!="none"){
                 if (putzolo_postFitsCheesyKeywords(lista[q])){
                     lista[q].style.opacity = 0.3;
+                }
+            };            
+            if (lista[q].style.display!="none"){
+                if (lista[q].innerHTML.indexOf("Connect With Facebook") > -1){
+                    lista[q].style.display = "none";
+                    hidden_in_this_round++;
                 }
             };            
         }
@@ -301,6 +379,18 @@
                 
             }
           }  
+        }
+        
+        //the favorites on the chat sidebar - they are no favorites, they are people I chat with        
+        var lista = document.getElementsByTagName("em"); 
+        for (var q = 0; q < lista.length; q++){
+            var at = lista[q].getAttribute("data-intl-translation")+"";
+            if (at == "FAVORITES"){
+                lista[q].parentNode.style.display = "none";
+            }
+            if (at.indexOf("MORE CONTACTS") == 0){
+                lista[q].parentNode.parentNode.parentNode.style.display = "none";
+            }
         }
         
         //in the feed
@@ -340,6 +430,14 @@
                         hidden_in_this_round++;
                     }
                 }
+            }
+        }
+        
+        //for some reason the chat sidebar displays empty entries too
+        var lista = document.getElementsByClassName("_42fz");
+        for (var q=0; q<lista.length; q++){
+            if (lista[q].getAttribute("data-id") == ""){
+                lista[q].style.border="1px solid yellow";
             }
         }
         
