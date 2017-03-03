@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         facebook putzolo
 // @namespace    http://csillagtura.ro/less-facebook-suggestions-userscript
-// @version      2016.12.14. 10:55
+// @version      2017.03.03. 14:45
 // @description  hides facebook dom elements like the annoying suggested posts/pages/people, needs fb to be in english
 // @author       VNP
 // @match        https://*.facebook.com/*
